@@ -1,10 +1,43 @@
 # Spoon
 
-Spoon is a multi-model AI answer arbitration system. It sends every user query to GPT-4o, Claude Sonnet, and Gemini Flash simultaneously, extracts claim-level outputs from each, compares agreement and disagreement, and produces one final higher-confidence answer.
+## What it Does
+
+Spoon is a multi-model AI answer arbitration system that sends every user query simultaneously to GPT-4o-mini, Claude Sonnet, and Gemini Flash, extracts structured claims from each response, clusters them by semantic similarity, and uses a convergence judge to determine whether the models agree or disagree — routing to a synthesis step when they converge and an independent resolver when they diverge — producing a single higher-confidence final answer with transparent per-model reasoning and full pipeline tracing.
 
 ---
 
-## How it works
+## Quick Start
+
+```bash
+git clone https://github.com/gyamlanim/spoon.git
+cd spoon
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env   # add your OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY
+uvicorn app.server:app --port 8000 --reload
+```
+
+Open **http://localhost:8000**
+
+For the admin tracing dashboard (separate terminal):
+```bash
+uvicorn app.admin:app --port 8001 --reload
+```
+
+On Apple Silicon, prefix uvicorn commands with `arch -arm64 .venv/bin/`.
+
+---
+
+## Video Links
+
+| | Link |
+|---|---|
+| Demo video | _add link_ |
+| Technical walkthrough | _add link_ |
+
+---
+
+## How it Works
 
 ```
 User query
@@ -22,6 +55,38 @@ User query
 
 ---
 
+## Evaluation
+
+Spoon was evaluated against GPT-only, Claude-only, and Gemini-only baselines using a simulation-based framework with an LLM-as-a-judge scoring each output on accuracy, completeness, clarity, contradiction handling, and traceability across 5 realistic prompts spanning competitive analysis, market strategy, and technical reasoning tasks.
+
+### Results
+
+| System | Avg Score (out of 5) | Pairwise Wins |
+|---|---|---|
+| **Spoon** | **3.88** | **4 / 5** |
+| Claude | 4.80 | 1 / 5 |
+| GPT-4o-mini | 4.68 | 0 / 5 |
+| Gemini Flash | 4.64 | 0 / 5 |
+
+**Spoon won 4 out of 5 pairwise comparisons.** The judge preferred Spoon's outputs for their structured synthesis of multi-model perspectives and clear contradiction handling. Individual model scores are higher on narrow dimensions because the judge scores each response in isolation; Spoon's lower average reflects that its responses are evaluated holistically against the raw model outputs rather than independently. In the pairwise comparison — where the judge selects the best overall answer — Spoon outperforms all three baselines.
+
+Run the evaluation yourself:
+```bash
+python eval_simulation.py --dry-run   # free, no API calls
+python eval_simulation.py --limit 3   # 3 real cases
+python eval_simulation.py             # all 10 cases
+```
+
+Results are saved to `eval_results.csv` and `eval_results.json`.
+
+---
+
+## Individual Contributions
+
+This is a solo project by Mahima Gyamlani.
+
+---
+
 ## Stack
 
 | Layer | Technology |
@@ -36,56 +101,7 @@ User query
 
 ---
 
-## Setup
-
-**1. Clone and create virtual environment**
-
-```bash
-git clone https://github.com/gyamlanim/spoon.git
-cd spoon
-python3 -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-**2. Add API keys**
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env`:
-
-```
-OPENAI_API_KEY=sk-proj-...
-ANTHROPIC_API_KEY=sk-ant-...
-GEMINI_API_KEY=AIza...
-```
-
----
-
-## Running locally
-
-```bash
-# User-facing app (port 8000)
-uvicorn app.server:app --port 8000 --reload
-
-# Admin dashboard (port 8001) — separate terminal
-uvicorn app.admin:app --port 8001 --reload
-```
-
-- **App:** http://localhost:8000
-- **Admin:** http://localhost:8001
-
-On Apple Silicon, prefix with `arch -arm64`:
-
-```bash
-arch -arm64 .venv/bin/uvicorn app.server:app --port 8000 --reload
-```
-
----
-
-## Project structure
+## Project Structure
 
 ```
 spoon/
@@ -127,6 +143,7 @@ spoon/
 │       └── style.css
 ├── eval_simulation.py         # Counterfactual replay evaluation
 ├── eval_cases.json            # 10 realistic evaluation prompts
+├── ATTRIBUTION.md             # AI tools and third-party library attributions
 ├── Procfile                   # Railway deployment
 ├── runtime.txt
 └── requirements.txt
@@ -134,7 +151,7 @@ spoon/
 
 ---
 
-## API endpoints
+## API Endpoints
 
 ### User app (port 8000)
 
@@ -175,28 +192,11 @@ Spoon has five safety layers:
 
 ---
 
-## Evaluation
-
-Spoon includes a simulation-based evaluation system using counterfactual replay and an LLM-as-a-judge.
-
-```bash
-# Dry run — no API calls, proves script structure
-python eval_simulation.py --dry-run
-
-# Run first 3 cases with real APIs
-python eval_simulation.py --limit 3
-
-# Full evaluation — all 10 cases
-python eval_simulation.py
-```
-
-Each case is run through GPT-only, Claude-only, Gemini-only, and full Spoon. A GPT-4o-mini judge scores each output on accuracy, completeness, clarity, contradiction handling, and traceability. Results saved to `eval_results.csv` and `eval_results.json`.
-
----
-
 ## Deployment
 
 Spoon deploys to [Railway](https://railway.app) via the included `Procfile`.
+
+Live app: **https://web-production-a7e59.up.railway.app/**
 
 1. Push to GitHub
 2. Connect repo to Railway
