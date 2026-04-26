@@ -1,9 +1,10 @@
 import json
 from pathlib import Path
-from openai import OpenAI
+from openai import OpenAI, RateLimitError as OpenAIRateLimitError
 import anthropic
 from google import genai
 from google.genai import types
+from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
 
 from app.core.config import OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY
 from app.core.safety import SAFETY_SYSTEM_PROMPT, safety_triggered
@@ -14,6 +15,33 @@ _PROMPT_TEMPLATE = (Path(__file__).parent.parent / "prompts" / "base_answer.txt"
 _openai    = OpenAI(api_key=OPENAI_API_KEY)
 _anthropic = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 _gemini    = genai.Client(api_key=GEMINI_API_KEY)
+
+_openai_retry = retry(
+    retry=retry_if_exception_type(OpenAIRateLimitError),
+    wait=wait_exponential(multiplier=1, min=2, max=60),
+    stop=stop_after_attempt(4),
+    reraise=True,
+)
+_anthropic_retry = retry(
+    retry=retry_if_exception_type(anthropic.RateLimitError),
+    wait=wait_exponential(multiplier=1, min=2, max=60),
+    stop=stop_after_attempt(4),
+    reraise=True,
+)
+_gemini_retry = retry(
+    retry=retry_if_exception_type(Exception),
+    wait=wait_exponential(multiplier=1, min=2, max=60),
+    stop=stop_after_attempt(4),
+    reraise=True,
+)
+
+
+def _strip_fences(text: str) -> str:
+    text = text.strip()
+    if text.startswith("```"):
+        text = text.split("\n", 1)[-1]
+        text = text.rsplit("```", 1)[0]
+    return text.strip()
 
 
 def _build_prompt(question: str, word_count: int, context: str = "",
@@ -35,15 +63,20 @@ def _build_prompt(question: str, word_count: int, context: str = "",
 def call_openai(prompt: str, word_count: int = 150, context: str = "",
                 conversation_history: str = "") -> tuple[ModelAnswer, dict]:
     user_prompt = _build_prompt(prompt, word_count, context, conversation_history)
-    response = _openai.chat.completions.create(
-        model="gpt-4o",
-        temperature=0,
-        messages=[
-            {"role": "system", "content": SAFETY_SYSTEM_PROMPT},
-            {"role": "user",   "content": user_prompt},
-        ],
-    )
-    answer = json.loads(response.choices[0].message.content)["answer"]
+
+    @_openai_retry
+    def _call():
+        return _openai.chat.completions.create(
+            model="gpt-4o",
+            temperature=0,
+            messages=[
+                {"role": "system", "content": SAFETY_SYSTEM_PROMPT},
+                {"role": "user",   "content": user_prompt},
+            ],
+        )
+
+    response = _call()
+    answer = json.loads(_strip_fences(response.choices[0].message.content))["answer"]
     usage = {
         "prompt_tokens":     response.usage.prompt_tokens,
         "completion_tokens": response.usage.completion_tokens,
@@ -56,13 +89,18 @@ def call_openai(prompt: str, word_count: int = 150, context: str = "",
 def call_claude(prompt: str, word_count: int = 150, context: str = "",
                 conversation_history: str = "") -> tuple[ModelAnswer, dict]:
     user_prompt = _build_prompt(prompt, word_count, context, conversation_history)
-    response = _anthropic.messages.create(
-        model="claude-opus-4-7",
-        system=SAFETY_SYSTEM_PROMPT,
-        max_tokens=1024,
-        messages=[{"role": "user", "content": user_prompt}],
-    )
-    answer = json.loads(response.content[0].text)["answer"]
+
+    @_anthropic_retry
+    def _call():
+        return _anthropic.messages.create(
+            model="claude-opus-4-7",
+            system=SAFETY_SYSTEM_PROMPT,
+            max_tokens=1024,
+            messages=[{"role": "user", "content": user_prompt}],
+        )
+
+    response = _call()
+    answer = json.loads(_strip_fences(response.content[0].text))["answer"]
     usage = {
         "prompt_tokens":     response.usage.input_tokens,
         "completion_tokens": response.usage.output_tokens,
@@ -72,26 +110,23 @@ def call_claude(prompt: str, word_count: int = 150, context: str = "",
     return ModelAnswer(model_name="claude-opus-4-7", answer_text=answer), usage
 
 
-def _strip_fences(text: str) -> str:
-    text = text.strip()
-    if text.startswith("```"):
-        text = text.split("\n", 1)[-1]
-        text = text.rsplit("```", 1)[0]
-    return text.strip()
-
-
 def call_gemini(prompt: str, word_count: int = 150, context: str = "",
                 conversation_history: str = "") -> tuple[ModelAnswer, dict]:
     user_prompt = _build_prompt(prompt, word_count, context, conversation_history)
-    response = _gemini.models.generate_content(
-        model="gemini-2.5-pro",
-        contents=user_prompt,
-        config=types.GenerateContentConfig(
-            temperature=0,
-            system_instruction=SAFETY_SYSTEM_PROMPT,
-            response_mime_type="application/json",
-        ),
-    )
+
+    @_gemini_retry
+    def _call():
+        return _gemini.models.generate_content(
+            model="gemini-2.5-pro",
+            contents=user_prompt,
+            config=types.GenerateContentConfig(
+                temperature=0,
+                system_instruction=SAFETY_SYSTEM_PROMPT,
+                response_mime_type="application/json",
+            ),
+        )
+
+    response = _call()
     answer = json.loads(_strip_fences(response.text))["answer"]
     meta = getattr(response, "usage_metadata", None)
     usage = {
