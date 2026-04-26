@@ -1,6 +1,6 @@
 # Spoon — Setup Guide
 
-Live app: **https://web-production-b028c.up.railway.app/**
+Live app: **https://web-production-a7e59.up.railway.app/**
 
 > The admin dashboard (run traces, step-level logs) runs locally only and is not deployed.
 
