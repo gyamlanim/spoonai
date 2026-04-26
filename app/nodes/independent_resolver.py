@@ -52,7 +52,6 @@ def independent_resolver(state: SpoonState) -> dict:
         response = _client.messages.create(
             model="claude-opus-4-7",
             system=SAFETY_SYSTEM_PROMPT,
-            temperature=0,
             max_tokens=2048,
             messages=[{"role": "user", "content": f"{_PROMPT}\n\n{user_content}"}],
         )

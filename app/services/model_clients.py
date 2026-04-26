@@ -59,7 +59,6 @@ def call_claude(prompt: str, word_count: int = 150, context: str = "",
     response = _anthropic.messages.create(
         model="claude-opus-4-7",
         system=SAFETY_SYSTEM_PROMPT,
-        temperature=0,
         max_tokens=1024,
         messages=[{"role": "user", "content": user_prompt}],
     )
@@ -73,6 +72,14 @@ def call_claude(prompt: str, word_count: int = 150, context: str = "",
     return ModelAnswer(model_name="claude-opus-4-7", answer_text=answer), usage
 
 
+def _strip_fences(text: str) -> str:
+    text = text.strip()
+    if text.startswith("```"):
+        text = text.split("\n", 1)[-1]
+        text = text.rsplit("```", 1)[0]
+    return text.strip()
+
+
 def call_gemini(prompt: str, word_count: int = 150, context: str = "",
                 conversation_history: str = "") -> tuple[ModelAnswer, dict]:
     user_prompt = _build_prompt(prompt, word_count, context, conversation_history)
@@ -82,9 +89,10 @@ def call_gemini(prompt: str, word_count: int = 150, context: str = "",
         config=types.GenerateContentConfig(
             temperature=0,
             system_instruction=SAFETY_SYSTEM_PROMPT,
+            response_mime_type="application/json",
         ),
     )
-    answer = json.loads(response.text)["answer"]
+    answer = json.loads(_strip_fences(response.text))["answer"]
     meta = getattr(response, "usage_metadata", None)
     usage = {
         "prompt_tokens":     getattr(meta, "prompt_token_count",     None) if meta else None,
