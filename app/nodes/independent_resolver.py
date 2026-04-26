@@ -55,7 +55,7 @@ def independent_resolver(state: SpoonState) -> dict:
             max_tokens=2048,
             messages=[{"role": "user", "content": f"{_PROMPT}\n\n{user_content}"}],
         )
-        raw = json.loads(_strip_fences(response.content[0].text))
+        raw, _ = json.JSONDecoder().raw_decode(_strip_fences(response.content[0].text))
         result = ResolverOutput.model_validate(raw)
         trace["output"] = {"final_answer": raw.get("final_answer"), "slots": len(raw.get("slots", []))}
         trace["usage"] = {

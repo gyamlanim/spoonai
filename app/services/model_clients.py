@@ -17,19 +17,19 @@ _anthropic = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 _gemini    = genai.Client(api_key=GEMINI_API_KEY)
 
 _openai_retry = retry(
-    retry=retry_if_exception_type(OpenAIRateLimitError),
+    retry=retry_if_exception_type((OpenAIRateLimitError, ValueError)),
     wait=wait_exponential(multiplier=1, min=2, max=60),
     stop=stop_after_attempt(4),
     reraise=True,
 )
 _anthropic_retry = retry(
-    retry=retry_if_exception_type(anthropic.RateLimitError),
+    retry=retry_if_exception_type((anthropic.RateLimitError, anthropic.APIStatusError, ValueError)),
     wait=wait_exponential(multiplier=1, min=2, max=60),
     stop=stop_after_attempt(4),
     reraise=True,
 )
 _gemini_retry = retry(
-    retry=retry_if_exception_type(Exception),
+    retry=retry_if_exception_type((Exception,)),
     wait=wait_exponential(multiplier=1, min=2, max=60),
     stop=stop_after_attempt(4),
     reraise=True,
@@ -42,6 +42,18 @@ def _strip_fences(text: str) -> str:
         text = text.split("\n", 1)[-1]
         text = text.rsplit("```", 1)[0]
     return text.strip()
+
+
+def _parse_answer(raw: str, model: str) -> str:
+    text = _strip_fences(raw)
+    if not text:
+        raise ValueError(f"{model} returned empty response — will retry")
+    try:
+        # Use raw_decode to grab just the first JSON object and ignore trailing content
+        obj, _ = json.JSONDecoder().raw_decode(text)
+        return obj["answer"]
+    except (json.JSONDecodeError, KeyError) as e:
+        raise ValueError(f"{model} returned non-JSON: {text[:100]!r}") from e
 
 
 def _build_prompt(question: str, word_count: int, context: str = "",
@@ -66,7 +78,7 @@ def call_openai(prompt: str, word_count: int = 150, context: str = "",
 
     @_openai_retry
     def _call():
-        return _openai.chat.completions.create(
+        response = _openai.chat.completions.create(
             model="gpt-4o",
             temperature=0,
             messages=[
@@ -74,9 +86,10 @@ def call_openai(prompt: str, word_count: int = 150, context: str = "",
                 {"role": "user",   "content": user_prompt},
             ],
         )
+        answer = _parse_answer(response.choices[0].message.content or "", "gpt-4o")
+        return response, answer
 
-    response = _call()
-    answer = json.loads(_strip_fences(response.choices[0].message.content))["answer"]
+    response, answer = _call()
     usage = {
         "prompt_tokens":     response.usage.prompt_tokens,
         "completion_tokens": response.usage.completion_tokens,
@@ -92,15 +105,17 @@ def call_claude(prompt: str, word_count: int = 150, context: str = "",
 
     @_anthropic_retry
     def _call():
-        return _anthropic.messages.create(
+        response = _anthropic.messages.create(
             model="claude-opus-4-7",
             system=SAFETY_SYSTEM_PROMPT,
             max_tokens=1024,
             messages=[{"role": "user", "content": user_prompt}],
         )
+        raw = response.content[0].text if response.content else ""
+        answer = _parse_answer(raw, "claude-opus-4-7")
+        return response, answer
 
-    response = _call()
-    answer = json.loads(_strip_fences(response.content[0].text))["answer"]
+    response, answer = _call()
     usage = {
         "prompt_tokens":     response.usage.input_tokens,
         "completion_tokens": response.usage.output_tokens,
@@ -116,7 +131,7 @@ def call_gemini(prompt: str, word_count: int = 150, context: str = "",
 
     @_gemini_retry
     def _call():
-        return _gemini.models.generate_content(
+        response = _gemini.models.generate_content(
             model="gemini-2.5-pro",
             contents=user_prompt,
             config=types.GenerateContentConfig(
@@ -125,9 +140,10 @@ def call_gemini(prompt: str, word_count: int = 150, context: str = "",
                 response_mime_type="application/json",
             ),
         )
+        answer = _parse_answer(response.text or "", "gemini-2.5-pro")
+        return response, answer
 
-    response = _call()
-    answer = json.loads(_strip_fences(response.text))["answer"]
+    response, answer = _call()
     meta = getattr(response, "usage_metadata", None)
     usage = {
         "prompt_tokens":     getattr(meta, "prompt_token_count",     None) if meta else None,

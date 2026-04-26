@@ -58,7 +58,7 @@ def score_support(state: SpoonState) -> dict:
             config=types.GenerateContentConfig(temperature=0),
         )
 
-        raw = json.loads(_strip_fences(response.text))
+        raw, _ = json.JSONDecoder().raw_decode(_strip_fences(response.text))
         converged = str(raw.get("converged", "false")).lower() == "true"
         summary   = raw.get("summary", "")
 
