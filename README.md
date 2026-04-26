@@ -1,8 +1,10 @@
 # Spoon
 
+**Can multi-model arbitration produce more reliable answers than any single LLM alone?**
+
 ## What it Does
 
-Spoon is a multi-model AI answer arbitration system that sends every user query simultaneously to GPT-4o-mini, Claude Sonnet, and Gemini Flash, extracts structured claims from each response, clusters them by semantic similarity, and uses a convergence judge to determine whether the models agree or disagree — routing to a synthesis step when they converge and an independent resolver when they diverge — producing a single higher-confidence final answer with transparent per-model reasoning and full pipeline tracing.
+Spoon is a reliability layer for LLM outputs built for high-stakes, accuracy-sensitive environments — consulting teams, strategy groups, and client-facing roles — where a single model isn't trustworthy enough and manually triangulating across models is too slow. It queries GPT-4o-mini, Claude Sonnet, and Gemini Flash in parallel, compares their outputs at the claim level, incorporates multiple perspectives when models agree, and arbitrates conflicts when they don't — producing a single, higher-quality answer along with transparent reasoning showing where models diverged and how the final answer was constructed.
 
 ---
 
@@ -57,9 +59,7 @@ User query
 
 ## Evaluation
 
-Spoon was evaluated against GPT-only, Claude-only, and Gemini-only baselines using a simulation-based framework with an LLM-as-a-judge scoring each output on accuracy, completeness, clarity, contradiction handling, and traceability across 5 realistic prompts spanning competitive analysis, market strategy, and technical reasoning tasks.
-
-### Results
+The core research question — **does multi-model arbitration produce better answers than any single model alone?** — was tested using a simulation-based evaluation framework. Spoon and each individual model (GPT-only, Claude-only, Gemini-only) were run against the same prompts, with a GPT-4o-mini judge scoring each output on accuracy, completeness, clarity, contradiction handling, and traceability. Prompts spanned competitive analysis, market strategy, and technical reasoning — representative of the consulting and strategy use cases validated through user discovery with 15+ professionals at firms including Putnam Associates, LEK, and Altman Solon.
 
 | System | Avg Score (out of 5) | Pairwise Wins |
 |---|---|---|
