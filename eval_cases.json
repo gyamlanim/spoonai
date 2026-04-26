@@ -1,0 +1,52 @@
+[
+  {
+    "id": "case_001",
+    "category": "competitive_analysis",
+    "prompt": "Compare Perplexity, ChatGPT, Claude, and Gemini for enterprise research workflows. Identify where their value propositions overlap and differ."
+  },
+  {
+    "id": "case_002",
+    "category": "market_entry",
+    "prompt": "A consulting team is evaluating whether a regional fast food chain should enter the breakfast market. What factors should they analyze?"
+  },
+  {
+    "id": "case_003",
+    "category": "startup_strategy",
+    "prompt": "Summarize the key risks and opportunities for a startup building multi-model AI answer arbitration."
+  },
+  {
+    "id": "case_004",
+    "category": "market_sizing",
+    "prompt": "Given three conflicting market-size estimates for the same product category, explain how you would reconcile them into one defensible estimate."
+  },
+  {
+    "id": "case_005",
+    "category": "buyer_personas",
+    "prompt": "Identify likely buyer personas for a tool that compares GPT, Claude, and Gemini outputs for accuracy-sensitive work."
+  },
+  {
+    "id": "case_006",
+    "category": "competitive_landscape",
+    "prompt": "Create a competitive landscape for AI research tools used by consultants and strategy teams."
+  },
+  {
+    "id": "case_007",
+    "category": "hypothesis_testing",
+    "prompt": "Pressure-test this hypothesis: consulting teams will pay for verified LLM outputs if the tool saves time and improves confidence."
+  },
+  {
+    "id": "case_008",
+    "category": "go_to_market",
+    "prompt": "Recommend an initial go-to-market strategy for Spoon targeting consulting firms."
+  },
+  {
+    "id": "case_009",
+    "category": "model_disagreement",
+    "prompt": "Explain why model disagreement matters in high-stakes knowledge work."
+  },
+  {
+    "id": "case_010",
+    "category": "trust_and_traceability",
+    "prompt": "Analyze how source attribution could increase trust in AI-generated consulting research."
+  }
+]

@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>spoon · admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #000;
+      --surface:     #0d1117;
+      --surface2:    #161b22;
+      --border:      #21262d;
+      --text:        #e6edf3;
+      --text-muted:  #7d8590;
+      --accent:      #4f46e5;
+      --green:       #3fb950;
+      --red:         #f85149;
+      --yellow:      #d29922;
+      --blue:        #58a6ff;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 28px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 10;
+    }
+    .header-back {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 13px;
+      transition: color .15s;
+    }
+    .header-back:hover { color: var(--text); }
+    .header-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .header-subtitle { color: var(--text-muted); font-size: 13px; }
+    .header-actions { margin-left: auto; display: flex; gap: 8px; }
+
+    /* ── Layout ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      height: calc(100vh - 57px);
+    }
+
+    /* ── Runs panel ── */
+    .runs-panel {
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .panel-header {
+      padding: 14px 18px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .refresh-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: color .15s, border-color .15s;
+    }
+    .refresh-btn:hover { color: var(--text); border-color: var(--text-muted); }
+
+    .run-item {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background .12s;
+    }
+    .run-item:hover   { background: var(--surface); }
+    .run-item.active  { background: var(--surface2); border-left: 2px solid var(--accent); }
+
+    .run-item-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .status-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+    .status-completed { background: rgba(63,185,80,.15); color: var(--green); }
+    .status-failed    { background: rgba(248,81,73,.15);  color: var(--red); }
+    .status-running   { background: rgba(210,153,34,.15); color: var(--yellow); }
+
+    .run-duration {
+      margin-left: auto;
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .run-prompt {
+      font-size: 13px;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 4px;
+    }
+    .run-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .empty-state {
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    /* ── Steps panel ── */
+    .steps-panel {
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .steps-placeholder {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    /* ── Run detail ── */
+    .run-detail { padding: 24px 28px; }
+    .run-detail-header { margin-bottom: 20px; }
+    .run-detail-prompt {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      word-break: break-word;
+    }
+    .run-detail-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .run-detail-meta span { display: flex; align-items: center; gap: 4px; }
+
+    /* Token summary bar */
+    .token-summary {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .token-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 16px;
+      min-width: 120px;
+    }
+    .token-card-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .4px; }
+    .token-card-value { font-size: 18px; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+
+    /* Steps list */
+    .steps-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      margin-bottom: 12px;
+    }
+
+    .step-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+    .step-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .step-card-header:hover { background: var(--surface2); }
+
+    .step-name {
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .step-model {
+      font-size: 12px;
+      color: var(--accent);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .step-tokens {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .step-duration {
+      margin-left: auto;
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .step-error-badge {
+      font-size: 11px;
+      color: var(--red);
+      background: rgba(248,81,73,.12);
+      border-radius: 4px;
+      padding: 2px 6px;
+    }
+    .step-chevron {
+      color: var(--text-muted);
+      font-size: 11px;
+      transition: transform .2s;
+    }
+    .step-chevron.open { transform: rotate(180deg); }
+
+    .step-body {
+      display: none;
+      padding: 0 16px 16px;
+      border-top: 1px solid var(--border);
+    }
+    .step-body.open { display: block; }
+
+    .step-body-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    @media (max-width: 900px) { .step-body-grid { grid-template-columns: 1fr; } }
+
+    .json-block { position: relative; }
+    .json-block-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      margin-bottom: 6px;
+    }
+    .json-pre {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      line-height: 1.6;
+      color: #c9d1d9;
+      overflow-x: auto;
+      max-height: 280px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .error-block {
+      margin-top: 12px;
+      background: rgba(248,81,73,.08);
+      border: 1px solid rgba(248,81,73,.3);
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--red);
+    }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <a href="/" class="header-back">← spoon</a>
+  <span class="header-title">admin</span>
+  <span class="header-subtitle">run traces</span>
+  <div class="header-actions">
+    <button class="refresh-btn" onclick="loadRuns()">↻ refresh</button>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- Left: runs list -->
+  <div class="runs-panel" id="runs-panel">
+    <div class="panel-header">
+      Recent Runs
+      <span id="run-count" style="font-weight:400;text-transform:none;letter-spacing:0"></span>
+    </div>
+    <div id="runs-list"><div class="empty-state">Loading…</div></div>
+  </div>
+
+  <!-- Right: step detail -->
+  <div class="steps-panel" id="steps-panel">
+    <div class="steps-placeholder" id="steps-placeholder">
+      Select a run to inspect its pipeline steps
+    </div>
+    <div id="run-detail" style="display:none"></div>
+  </div>
+
+</div>
+
+<script>
+'use strict';
+
+let _selectedRunId = null;
+
+// ── Formatting helpers ───────────────────────────────────────────────────────
+
+function fmtDuration(ms) {
+  if (ms == null) return '—';
+  if (ms < 1000) return `${ms}ms`;
+  return `${(ms / 1000).toFixed(2)}s`;
+}
+
+function fmtTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleString(undefined, { month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function fmtShortId(id) {
+  return id ? id.slice(0, 8) : '—';
+}
+
+function statusBadge(status) {
+  const cls = `status-badge status-${status}`;
+  return `<span class="${cls}">${status}</span>`;
+}
+
+function prettyJson(raw) {
+  if (!raw) return 'null';
+  try {
+    const obj = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    return JSON.stringify(obj, null, 2);
+  } catch {
+    return raw;
+  }
+}
+
+// ── Load runs ────────────────────────────────────────────────────────────────
+
+async function loadRuns() {
+  const list = document.getElementById('runs-list');
+  try {
+    const res  = await fetch('/api/runs?limit=50');
+    const runs = await res.json();
+
+    document.getElementById('run-count').textContent = `${runs.length} runs`;
+
+    if (!runs.length) {
+      list.innerHTML = '<div class="empty-state">No runs yet. Make a query to see traces here.</div>';
+      return;
+    }
+
+    list.innerHTML = runs.map(r => `
+      <div class="run-item ${r.id === _selectedRunId ? 'active' : ''}"
+           onclick="selectRun('${r.id}')">
+        <div class="run-item-top">
+          ${statusBadge(r.status)}
+          <span class="run-duration">${fmtDuration(r.total_duration_ms)}</span>
+        </div>
+        <div class="run-prompt">${esc(r.user_prompt)}</div>
+        <div class="run-meta">${fmtShortId(r.id)} · ${fmtTime(r.started_at)}</div>
+      </div>
+    `).join('');
+  } catch (err) {
+    list.innerHTML = `<div class="empty-state" style="color:var(--red)">Failed to load runs: ${err.message}</div>`;
+  }
+}
+
+// ── Select and load a run ────────────────────────────────────────────────────
+
+async function selectRun(runId) {
+  _selectedRunId = runId;
+  // Highlight selected
+  document.querySelectorAll('.run-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.run-item').forEach(el => {
+    if (el.onclick.toString().includes(runId)) el.classList.add('active');
+  });
+
+  document.getElementById('steps-placeholder').style.display = 'none';
+  const detail = document.getElementById('run-detail');
+  detail.style.display = 'block';
+  detail.innerHTML = '<div style="padding:40px 28px;color:var(--text-muted)">Loading…</div>';
+
+  try {
+    const res  = await fetch(`/api/runs/${runId}`);
+    const data = await res.json();
+    renderDetail(data.run, data.steps);
+  } catch (err) {
+    detail.innerHTML = `<div style="padding:28px;color:var(--red)">Error: ${err.message}</div>`;
+  }
+}
+
+// ── Render detail ────────────────────────────────────────────────────────────
+
+function renderDetail(run, steps) {
+  const totalTokens = steps.reduce((s, st) => s + (st.total_tokens || 0), 0);
+  const totalPrompt = steps.reduce((s, st) => s + (st.prompt_tokens || 0), 0);
+  const totalComp   = steps.reduce((s, st) => s + (st.completion_tokens || 0), 0);
+  const llmSteps    = steps.filter(s => s.model_name);
+
+  const detail = document.getElementById('run-detail');
+  detail.innerHTML = `
+    <div class="run-detail">
+      <div class="run-detail-header">
+        <div class="run-detail-prompt">${esc(run.user_prompt)}</div>
+        <div class="run-detail-meta">
+          ${statusBadge(run.status)}
+          <span>run ${fmtShortId(run.id)}</span>
+          <span>total ${fmtDuration(run.total_duration_ms)}</span>
+          <span>${fmtTime(run.started_at)}</span>
+          ${run.doc_id ? `<span>📄 doc ${fmtShortId(run.doc_id)}</span>` : ''}
+          ${run.error ? `<span style="color:var(--red)">⚠ ${esc(run.error.slice(0,80))}</span>` : ''}
+        </div>
+      </div>
+
+      ${totalTokens ? `
+      <div class="token-summary">
+        <div class="token-card">
+          <div class="token-card-label">Total tokens</div>
+          <div class="token-card-value">${totalTokens.toLocaleString()}</div>
+        </div>
+        <div class="token-card">
+          <div class="token-card-label">Prompt tokens</div>
+          <div class="token-card-value">${totalPrompt.toLocaleString()}</div>
+        </div>
+        <div class="token-card">
+          <div class="token-card-label">Completion tokens</div>
+          <div class="token-card-value">${totalComp.toLocaleString()}</div>
+        </div>
+        <div class="token-card">
+          <div class="token-card-label">LLM steps</div>
+          <div class="token-card-value">${llmSteps.length}</div>
+        </div>
+      </div>` : ''}
+
+      ${run.final_answer ? `
+      <div style="margin-bottom:20px">
+        <div class="steps-label">Final answer</div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;
+                    padding:14px 16px;font-size:13px;line-height:1.7;color:#c9d1d9">
+          ${esc(run.final_answer)}
+        </div>
+      </div>` : ''}
+
+      <div class="steps-label">${steps.length} pipeline steps</div>
+      ${steps.map((step, i) => renderStep(step, i)).join('')}
+    </div>
+  `;
+}
+
+function renderStep(step, i) {
+  const hasBody = step.input_json || step.output_json || step.error;
+  return `
+    <div class="step-card">
+      <div class="step-card-header" onclick="toggleStep(${i})">
+        <div>
+          <span class="step-name">${esc(step.step_name)}</span>
+          ${step.model_name ? `<span class="step-model"> · ${esc(step.model_name)}</span>` : ''}
+        </div>
+        ${step.total_tokens
+          ? `<span class="step-tokens">${step.prompt_tokens}↑ ${step.completion_tokens}↓ ${step.total_tokens}T</span>`
+          : ''}
+        ${step.error ? `<span class="step-error-badge">error</span>` : ''}
+        <span class="step-duration">${fmtDuration(step.duration_ms)}</span>
+        ${hasBody ? `<span class="step-chevron" id="chev-${i}">▾</span>` : ''}
+      </div>
+      ${hasBody ? `
+      <div class="step-body" id="body-${i}">
+        ${step.error ? `<div class="error-block">${esc(step.error)}</div>` : ''}
+        <div class="step-body-grid">
+          ${step.input_json ? `
+          <div class="json-block">
+            <div class="json-block-label">Input</div>
+            <pre class="json-pre">${esc(prettyJson(step.input_json))}</pre>
+          </div>` : ''}
+          ${step.output_json ? `
+          <div class="json-block">
+            <div class="json-block-label">Output</div>
+            <pre class="json-pre">${esc(prettyJson(step.output_json))}</pre>
+          </div>` : ''}
+        </div>
+      </div>` : ''}
+    </div>
+  `;
+}
+
+function toggleStep(i) {
+  const body = document.getElementById(`body-${i}`);
+  const chev = document.getElementById(`chev-${i}`);
+  if (body) body.classList.toggle('open');
+  if (chev) chev.classList.toggle('open');
+}
+
+function esc(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+
+loadRuns();
+// Auto-refresh every 15s
+setInterval(loadRuns, 15000);
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+langgraph
+langchain
+langchain-openai
+langchain-anthropic
+openai
+anthropic
+google-genai
+python-dotenv
+pydantic
+numpy
+pypdf
+python-multipart
+fastapi
+uvicorn[standard]
+aiofiles
