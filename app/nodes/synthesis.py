@@ -38,9 +38,9 @@ def synthesis(state: SpoonState) -> dict:
                         "model_answers": {f"answer_{i+1}": a.answer_text
                                           for i, a in enumerate(model_answers)},
                     },
-                    model_name="claude-sonnet-4-6") as trace:
+                    model_name="claude-opus-4-7") as trace:
         response = _client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-opus-4-7",
             system=SAFETY_SYSTEM_PROMPT,
             temperature=0,
             max_tokens=1024,

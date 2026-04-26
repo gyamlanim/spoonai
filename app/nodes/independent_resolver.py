@@ -48,9 +48,9 @@ def independent_resolver(state: SpoonState) -> dict:
                         "clusters":            clusters_block,
                         "answers":             {a.model_name: a.answer_text[:300] for a in answers},
                     },
-                    model_name="claude-sonnet-4-6") as trace:
+                    model_name="claude-opus-4-7") as trace:
         response = _client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-opus-4-7",
             system=SAFETY_SYSTEM_PROMPT,
             temperature=0,
             max_tokens=2048,

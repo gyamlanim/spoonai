@@ -50,10 +50,10 @@ def score_support(state: SpoonState) -> dict:
 
     with trace_step(run_id, "score_support",
                     input_data=claims_payload,
-                    model_name="gemini-2.5-flash") as trace:
+                    model_name="gemini-2.5-pro") as trace:
 
         response = _client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-2.5-pro",
             contents=prompt,
             config=types.GenerateContentConfig(temperature=0),
         )

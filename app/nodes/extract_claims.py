@@ -9,7 +9,7 @@ from app.utils.tracing import trace_step
 
 _PROMPT  = (Path(__file__).parent.parent / "prompts" / "extract_claims.txt").read_text()
 _client  = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY, timeout=60.0)
-_MODEL = "claude-haiku-4-5"
+_MODEL = "claude-sonnet-4-6"
 
 
 def _strip_fences(text: str) -> str:

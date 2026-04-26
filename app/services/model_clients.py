@@ -36,7 +36,7 @@ def call_openai(prompt: str, word_count: int = 150, context: str = "",
                 conversation_history: str = "") -> tuple[ModelAnswer, dict]:
     user_prompt = _build_prompt(prompt, word_count, context, conversation_history)
     response = _openai.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-4o",
         temperature=0,
         messages=[
             {"role": "system", "content": SAFETY_SYSTEM_PROMPT},
@@ -50,14 +50,14 @@ def call_openai(prompt: str, word_count: int = 150, context: str = "",
         "total_tokens":      response.usage.total_tokens,
         "safety_triggered":  safety_triggered(answer),
     }
-    return ModelAnswer(model_name="gpt-4o-mini", answer_text=answer), usage
+    return ModelAnswer(model_name="gpt-4o", answer_text=answer), usage
 
 
 def call_claude(prompt: str, word_count: int = 150, context: str = "",
                 conversation_history: str = "") -> tuple[ModelAnswer, dict]:
     user_prompt = _build_prompt(prompt, word_count, context, conversation_history)
     response = _anthropic.messages.create(
-        model="claude-sonnet-4-6",
+        model="claude-opus-4-7",
         system=SAFETY_SYSTEM_PROMPT,
         temperature=0,
         max_tokens=1024,
@@ -70,14 +70,14 @@ def call_claude(prompt: str, word_count: int = 150, context: str = "",
         "total_tokens":      response.usage.input_tokens + response.usage.output_tokens,
         "safety_triggered":  safety_triggered(answer),
     }
-    return ModelAnswer(model_name="claude-sonnet-4-6", answer_text=answer), usage
+    return ModelAnswer(model_name="claude-opus-4-7", answer_text=answer), usage
 
 
 def call_gemini(prompt: str, word_count: int = 150, context: str = "",
                 conversation_history: str = "") -> tuple[ModelAnswer, dict]:
     user_prompt = _build_prompt(prompt, word_count, context, conversation_history)
     response = _gemini.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-2.5-pro",
         contents=user_prompt,
         config=types.GenerateContentConfig(
             temperature=0,
@@ -92,4 +92,4 @@ def call_gemini(prompt: str, word_count: int = 150, context: str = "",
         "total_tokens":      getattr(meta, "total_token_count",      None) if meta else None,
         "safety_triggered":  safety_triggered(answer),
     }
-    return ModelAnswer(model_name="gemini-2.5-flash", answer_text=answer), usage
+    return ModelAnswer(model_name="gemini-2.5-pro", answer_text=answer), usage

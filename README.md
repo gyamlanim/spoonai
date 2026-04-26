@@ -92,8 +92,8 @@ This is a solo project by Mahima Gyamlani.
 | Layer | Technology |
 |---|---|
 | Backend | FastAPI, LangGraph, Python 3.12 |
-| Models | OpenAI GPT-4o-mini, Anthropic Claude Sonnet 4.6, Google Gemini 2.5 Flash |
-| Arbitration | Claude Haiku (claim extraction), Gemini (convergence judge), Claude Sonnet (synthesis / resolver) |
+| Models | OpenAI GPT-4o, Anthropic Claude Opus 4.7, Google Gemini 2.5 Pro |
+| Arbitration | Claude Sonnet 4.6 (claim extraction), Gemini 2.5 Pro (convergence judge), Claude Opus 4.7 (synthesis / resolver) |
 | Storage | SQLite (conversations, runs, documents) |
 | RAG | Sentence-based chunking, OpenAI embeddings, LLM reranking |
 | Frontend | Vanilla HTML/CSS/JS |

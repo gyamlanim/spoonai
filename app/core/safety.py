@@ -61,7 +61,7 @@ def classify_prompt_safety(prompt: str) -> dict:
     """
     try:
         response = _classifier_client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4o",
             temperature=0,
             max_tokens=120,
             messages=[

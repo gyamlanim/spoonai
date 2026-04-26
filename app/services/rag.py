@@ -33,7 +33,7 @@ def build_store_from_file(file_path: str, sentences_per_chunk: int = 2,
 
 
 def embed(text: str) -> np.ndarray:
-    response = client.embeddings.create(model="text-embedding-3-small", input=text)
+    response = client.embeddings.create(model="text-embedding-3-large", input=text)
     return np.array(response.data[0].embedding)
 
 
@@ -62,7 +62,7 @@ def llm_rerank(query: str, chunks: list[str], top_n: int = 3) -> list[str]:
         f"If no chunk is relevant, return: none"
     )
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-4o",
         messages=[{"role": "user", "content": prompt}],
     )
     raw = response.choices[0].message.content or ""
