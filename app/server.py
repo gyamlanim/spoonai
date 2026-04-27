@@ -223,18 +223,39 @@ async def upload_document(file: UploadFile = File(...)):
     return {"doc_id": doc_id, "filename": file.filename, "chunks": len(store)}
 
 
+_SAFETY_MESSAGES = {
+    "self_harm": (
+        "It sounds like you might be going through something really difficult, and I want you to know that support is available. "
+        "Please reach out to the 988 Suicide & Crisis Lifeline by calling or texting 988 — they're available 24/7 and are there to help. "
+        "If you're outside the US, the International Association for Suicide Prevention maintains a directory of crisis centres at https://www.iasp.info/resources/Crisis_Centres/. "
+        "You don't have to go through this alone."
+    ),
+    "profanity": (
+        "Hey — let's keep things respectful. Spoon is here to help with research, analysis, and knowledge work. "
+        "Try rephrasing your question and I'll do my best to give you a great answer."
+    ),
+}
+
+_DEFAULT_SAFETY_MESSAGE = (
+    "This prompt couldn't be processed because it appears to violate our content policy. "
+    "Please rephrase your question and try again."
+)
+
+
 @app.post("/api/query")
 async def process_query(req: QueryRequest):
     # Guardrail #2 — classify prompt before touching the pipeline or memory
     safety = classify_prompt_safety(req.query)
     if not safety["is_allowed"]:
+        category = safety["category"]
         raise HTTPException(
             status_code=400,
             detail={
                 "error":      "unsafe_prompt",
-                "category":   safety["category"],
+                "category":   category,
                 "reason":     safety["reason"],
                 "confidence": safety["confidence"],
+                "message":    _SAFETY_MESSAGES.get(category, _DEFAULT_SAFETY_MESSAGE),
             },
         )
 

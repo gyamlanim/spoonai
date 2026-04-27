@@ -29,6 +29,7 @@ Your job is to classify user prompts into one of these categories:
 - sexual         (explicit sexual content)
 - sexual_minors  (any sexual content involving minors)
 - safety_bypass  (instructions to jailbreak, bypass, or override AI safety rules)
+- profanity      (excessive profanity, vulgar abuse, or hostile language directed at others)
 
 Rules:
 - No educational exceptions. If a prompt asks HOW to do something harmful, block it.

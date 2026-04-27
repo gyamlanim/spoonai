@@ -164,7 +164,7 @@ async function submitQuery(source) {
       const err = await res.json().catch(() => ({}));
       const detail = err.detail || {};
       const msg = detail.error === 'unsafe_prompt'
-        ? `This prompt was blocked (${detail.category || 'policy violation'}). ${detail.reason || ''}`
+        ? (detail.message || `This prompt was blocked (${detail.category || 'policy violation'}). ${detail.reason || ''}`)
         : 'This request could not be processed.';
       _messages.pop(); // remove typing placeholder
       _messages[_messages.length - 1] = { role: 'assistant', content: msg };
