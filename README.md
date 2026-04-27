@@ -35,7 +35,7 @@ On Apple Silicon, prefix uvicorn commands with `arch -arm64 .venv/bin/`.
 | | Link |
 |---|---|
 | Demo video |https://youtu.be/_3AxktmtK_U?si=DM_p0kx5Usct-OqT|
-| Technical walkthrough | _add link_ |
+| Technical walkthrough | https://youtu.be/hD_xtY7eqhM |
 
 ---
 
